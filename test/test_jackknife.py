@@ -1,10 +1,13 @@
 from __future__ import division
-import ldscore.jackknife as jk
+
 import unittest
-import numpy as np
+
 import nose
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+import numpy as np
 from nose.tools import assert_raises
+from numpy.testing import assert_array_almost_equal, assert_array_equal
+
+import ldscore.jackknife as jk
 
 
 class Test_Jackknife(unittest.TestCase):
@@ -12,9 +15,9 @@ class Test_Jackknife(unittest.TestCase):
     def test_separators(self):
         N = 20
         x = np.arange(N)
-        for i in xrange(2, int(np.floor(N / 2))):
+        for i in range(2, int(np.floor(N / 2))):
             s = jk.Jackknife.get_separators(N, i)
-            lengths = [len(x[s[j]:s[j + 1]]) for j in xrange(len(s) - 2)]
+            lengths = [len(x[s[j]:s[j + 1]]) for j in range(len(s) - 2)]
 
         self.assertTrue(max(lengths) - min(lengths) <= 1)
 
@@ -195,7 +198,7 @@ class Test_LsqtsqJackknifeFast(unittest.TestCase):
         x = np.atleast_2d(np.random.normal(size=(100, 2)))
         y = np.atleast_2d(np.random.normal(size=(100, 1)))
         print x.shape
-        for n_blocks in xrange(2, 49):
+        for n_blocks in range(2, 49):
             b1 = jk.LstsqJackknifeFast(x, y, n_blocks=n_blocks).est
             b2 = jk.LstsqJackknifeSlow(x, y, n_blocks=n_blocks).est
             assert_array_almost_equal(b1, b2)
