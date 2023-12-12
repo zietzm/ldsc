@@ -154,6 +154,22 @@ class LD_Score_Regression(object):
         step1_ii=None,
         old_weights=False,
     ):
+        """
+        Parameters
+        ----------
+        y : np.array with shape (n_snp, 1)
+            Chi-squared statistics (or z1z2?).
+        x : np.array with shape (n_snp, 1)
+            "ref_ld", - LD scores to use as independent variables.
+        w : np.array with shape (n_snp, 1)
+            "w_ld_cname" - LD scores to use as weights.
+        N : np.array with shape (n_snp, 1)
+            Sample size
+        M : np.array with shape (1, n_annot)
+            Number of SNPs in each annotation category.
+        n_blocks : int
+            Number of jackknife blocks.
+        """
         for i in [y, x, w, M, N]:
             try:
                 if len(i.shape) != 2:

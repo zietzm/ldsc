@@ -8,7 +8,6 @@ regression is implemented in the regressions module.
 from __future__ import division
 
 import copy
-import glob
 import itertools as it
 import os
 import sys
@@ -225,14 +224,14 @@ def _check_ld_condnum(args, log, ref_ld):
 
 def _check_variance(log, M_annot, ref_ld):
     """Remove zero-variance LD Scores."""
-    ii = ref_ld.ix[:, 1:].var() == 0  # NB there is a SNP column here
+    ii = ref_ld.iloc[:, 1:].var() == 0  # NB there is a SNP column here
     if ii.all():
         raise ValueError("All LD Scores have zero variance.")
     else:
         log.log("Removing partitioned LD Scores with zero variance.")
         ii_snp = np.array([True] + list(~ii))
         ii_m = np.array(~ii)
-        ref_ld = ref_ld.ix[:, ii_snp]
+        ref_ld = ref_ld.iloc[:, ii_snp]
         M_annot = M_annot[:, ii_m]
 
     return M_annot, ref_ld, ii
@@ -313,7 +312,7 @@ def cell_type_specific(args, log):
         chisq_max = args.chisq_max
 
     ii = np.ravel(sumstats.Z**2 < chisq_max)
-    sumstats = sumstats.ix[ii, :]
+    sumstats = sumstats.iloc[ii, :]
     log.log(
         "Removed {M} SNPs with chi^2 > {C} ({N} SNPs remain)".format(
             C=chisq_max, N=np.sum(ii), M=n_snp - np.sum(ii)
@@ -340,7 +339,7 @@ def cell_type_specific(args, log):
         )
         log.log("Performing regression.")
         ref_ld_cts = np.array(
-            pd.merge(keep_snps, ref_ld_cts_allsnps, on="SNP", how="left").ix[:, 1:]
+            pd.merge(keep_snps, ref_ld_cts_allsnps, on="SNP", how="left").iloc[:, 1:]
         )
         if np.any(np.isnan(ref_ld_cts)):
             raise ValueError(
@@ -381,10 +380,13 @@ def estimate_h2(args, log):
     args = copy.deepcopy(args)
     if args.samp_prev is not None and args.pop_prev is not None:
         args.samp_prev, args.pop_prev = map(float, [args.samp_prev, args.pop_prev])
+
     if args.intercept_h2 is not None:
         args.intercept_h2 = float(args.intercept_h2)
+
     if args.no_intercept:
         args.intercept_h2 = 1
+
     M_annot, w_ld_cname, ref_ld_cnames, sumstats, novar_cols = _read_ld_sumstats(
         args, log, args.h2
     )
@@ -408,7 +410,7 @@ def estimate_h2(args, log):
     chisq = s(sumstats.Z**2)
     if chisq_max is not None:
         ii = np.ravel(chisq < chisq_max)
-        sumstats = sumstats.ix[ii, :]
+        sumstats = sumstats.iloc[ii, :]
         log.log(
             "Removed {M} SNPs with chi^2 > {C} ({N} SNPs remain)".format(
                 C=chisq_max, N=np.sum(ii), M=n_snp - np.sum(ii)
