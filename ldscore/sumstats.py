@@ -386,7 +386,6 @@ def estimate_h2(args, log):
 
     if args.no_intercept:
         args.intercept_h2 = 1
-
     M_annot, w_ld_cname, ref_ld_cnames, sumstats, novar_cols = _read_ld_sumstats(
         args, log, args.h2
     )
@@ -542,10 +541,10 @@ def _get_rg_table(rg_paths, RG, args):
     x = pd.DataFrame()
     x["p1"] = [rg_paths[0] for i in range(1, len(rg_paths))]
     x["p2"] = rg_paths[1 : len(rg_paths)]
-    x["rg"] = map(t("rg_ratio"), RG)
-    x["se"] = map(t("rg_se"), RG)
-    x["z"] = map(t("z"), RG)
-    x["p"] = map(t("p"), RG)
+    x["rg"] = list(map(t("rg_ratio"), RG))
+    x["se"] = list(map(t("rg_se"), RG))
+    x["z"] = list(map(t("z"), RG))
+    x["p"] = list(map(t("p"), RG))
     if (
         args.samp_prev is not None
         and args.pop_prev is not None
@@ -557,18 +556,20 @@ def _get_rg_table(rg_paths, RG, args):
             args.samp_prev[1:],
             args.pop_prev[1:],
         )
-        x["h2_liab"] = map(lambda x, y: x * y, c, map(t("tot"), map(t("hsq2"), RG)))
-        x["h2_liab_se"] = map(
-            lambda x, y: x * y, c, map(t("tot_se"), map(t("hsq2"), RG))
+        x["h2_liab"] = list(
+            map(lambda x, y: x * y, c, map(t("tot"), map(t("hsq2"), RG)))
+        )
+        x["h2_liab_se"] = list(
+            map(lambda x, y: x * y, c, map(t("tot_se"), map(t("hsq2"), RG)))
         )
     else:
-        x["h2_obs"] = map(t("tot"), map(t("hsq2"), RG))
-        x["h2_obs_se"] = map(t("tot_se"), map(t("hsq2"), RG))
+        x["h2_obs"] = list(map(t("tot"), map(t("hsq2"), RG)))
+        x["h2_obs_se"] = list(map(t("tot_se"), map(t("hsq2"), RG)))
 
-    x["h2_int"] = map(t("intercept"), map(t("hsq2"), RG))
-    x["h2_int_se"] = map(t("intercept_se"), map(t("hsq2"), RG))
-    x["gcov_int"] = map(t("intercept"), map(t("gencov"), RG))
-    x["gcov_int_se"] = map(t("intercept_se"), map(t("gencov"), RG))
+    x["h2_int"] = list(map(t("intercept"), map(t("hsq2"), RG)))
+    x["h2_int_se"] = list(map(t("intercept_se"), map(t("hsq2"), RG)))
+    x["gcov_int"] = list(map(t("intercept"), map(t("gencov"), RG)))
+    x["gcov_int_se"] = list(map(t("intercept_se"), map(t("gencov"), RG)))
     return x.to_string(header=True, index=False) + "\n"
 
 
@@ -627,7 +628,7 @@ def _rg(sumstats, args, log, M_annot, ref_ld_cnames, w_ld_cname, i):
         n_snp = np.sum(ii)  # lambdas are late binding, so this works
         sumstats = sumstats[ii]
     n_blocks = min(args.n_blocks, n_snp)
-    ref_ld = sumstats.as_matrix(columns=ref_ld_cnames)
+    ref_ld = sumstats[ref_ld_cnames].values
     intercepts = [
         args.intercept_h2[0],
         args.intercept_h2[i + 1],
