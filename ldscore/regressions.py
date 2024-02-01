@@ -875,6 +875,28 @@ class RG(object):
         slow=False,
         twostep=None,
     ):
+        """
+        Parameters
+        ----------
+        z1 : np.array
+            Z scores for phenotype 1.
+        z2 : np.array
+            Z scores for phenotype 2.
+        x : np.array
+            LD scores.
+        w : np.array
+        N1 : np.array
+            Sample size for phenotype 1.
+        N2 : np.array
+            Sample size for phenotype 2.
+        M : np.array
+        intercept_hsq1 : float
+        intercept_hsq2 : float
+        intercept_gencov : float
+        n_blocks : int
+        slow : bool
+        twostep : float
+        """
         self.intercept_gencov = intercept_gencov
         self._negative_hsq = None
         n_snp, n_annot = x.shape
