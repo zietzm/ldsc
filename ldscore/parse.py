@@ -154,7 +154,7 @@ def ldscore(fh, num=None):
     suffix = ".l2.ldscore"
     if num is not None:  # num files, e.g., one per chromosome
         chrs = get_present_chrs(fh, num + 1)
-        print(chrs)
+        print(chrs, fh, num)
         first_fh = sub_chr(fh, chrs[0]) + suffix
         s, compression = which_compression(first_fh)
         chr_ld = [l2_parser(sub_chr(fh, i) + suffix + s, compression) for i in chrs]
