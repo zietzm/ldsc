@@ -3,7 +3,6 @@ import bz2
 import gzip
 import sys
 import time
-import traceback
 
 import numpy as np
 import pandas as pd
@@ -17,8 +16,8 @@ np.seterr(invalid="ignore")
 try:
     x = pd.DataFrame({"A": [1, 2, 3]})
     x.sort_values(by="A")
-except AttributeError:
-    raise ImportError("LDSC requires pandas version >= 0.17.0")
+except AttributeError as e:
+    raise ImportError("LDSC requires pandas version >= 0.17.0") from e
 
 null_values = {"LOG_ODDS": 0, "BETA": 0, "OR": 1, "Z": 0}
 
@@ -253,7 +252,7 @@ def parse_dat(dat_gen, convert_colname, merge_alleles, log, args):
             axis=0, how="any", subset=filter(lambda x: x != "INFO", dat.columns)
         ).reset_index(drop=True)
         drops["NA"] += old - len(dat)
-        dat.columns = map(lambda x: convert_colname[x], dat.columns)
+        dat.columns = [convert_colname[x] for x in dat.columns]
 
         wrong_types = [
             c
