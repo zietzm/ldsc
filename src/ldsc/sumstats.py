@@ -5,7 +5,6 @@ This module deals with getting all the data needed for LD Score regression from 
 into memory and checking that the input makes sense. There is no math here. LD Score
 regression is implemented in the regressions module.
 """
-from __future__ import division
 
 import copy
 import itertools as it
@@ -17,8 +16,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-import ldscore.parse as ps
-import ldscore.regressions as reg
+import ldsc.parse as ps
+import ldsc.regressions as reg
 
 _N_CHR = 22
 # complementary bases
@@ -42,16 +41,19 @@ MATCH_ALLELES = {
     x
     for x in map(lambda y: "".join(y), it.product(VALID_SNPS, VALID_SNPS))
     # strand and ref match
-    if ((x[0] == x[2]) and (x[1] == x[3])) or
+    if ((x[0] == x[2]) and (x[1] == x[3]))
+    or
     # ref match, strand flip
-    ((x[0] == COMPLEMENT[x[2]]) and (x[1] == COMPLEMENT[x[3]])) or
+    ((x[0] == COMPLEMENT[x[2]]) and (x[1] == COMPLEMENT[x[3]]))
+    or
     # ref flip, strand match
     ((x[0] == x[3]) and (x[1] == x[2]))
     or ((x[0] == COMPLEMENT[x[3]]) and (x[1] == COMPLEMENT[x[2]]))
 }  # strand and ref flip
 # T iff SNP 1 has the same alleles as SNP 2 w/ ref allele flip.
 FLIP_ALLELES = {
-    "".join(x): ((x[0] == x[3]) and (x[1] == x[2])) or  # strand match
+    "".join(x): ((x[0] == x[3]) and (x[1] == x[2]))  # strand match
+    or
     # strand flip
     ((x[0] == COMPLEMENT[x[3]]) and (x[1] == COMPLEMENT[x[2]]))
     for x in MATCH_ALLELES
@@ -95,7 +97,7 @@ def _read_ref_ld(args, log):
         "reference panel LD Score",
         ps.ldscore_fromlist,
     )
-    log.log("Read reference panel LD Scores for {N} SNPs.".format(N=len(ref_ld)))
+    log.log(f"Read reference panel LD Scores for {len(ref_ld)} SNPs.")
     return ref_ld
 
 
@@ -133,7 +135,7 @@ def _read_M(args, log, n_annot):
         try:
             M_annot = [float(x) for x in _splitp(args.M)]
         except ValueError as e:
-            raise ValueError("Could not cast --M to float: " + str(e.args))
+            raise ValueError(f"Could not cast --M to float: {e.args}") from e
     else:
         if args.ref_ld:
             M_annot = ps.M_fromlist(_splitp(args.ref_ld), common=(not args.not_M_5_50))
@@ -146,8 +148,8 @@ def _read_M(args, log, n_annot):
         M_annot = np.array(M_annot).reshape((1, n_annot))
     except ValueError as e:
         raise ValueError(
-            "# terms in --M must match # of LD Scores in --ref-ld.\n" + str(e.args)
-        )
+            f"# terms in --M must match # of LD Scores in --ref-ld.\n{e.args}"
+        ) from e
 
     return M_annot
 
@@ -162,7 +164,7 @@ def _read_w_ld(args, log):
     if len(w_ld.columns) != 2:
         raise ValueError("--w-ld may only have one LD Score column.")
     w_ld.columns = ["SNP", "LD_weights"]  # prevent colname conflicts w/ ref ld
-    log.log("Read regression weight LD Scores for {N} SNPs.".format(N=len(w_ld)))
+    log.log(f"Read regression weight LD Scores for {len(w_ld)} SNPs.")
     return w_ld
 
 
@@ -170,22 +172,14 @@ def _read_chr_split_files(chr_arg, not_chr_arg, log, noun, parsefunc, **kwargs):
     """Read files split across 22 chromosomes (annot, ref_ld, w_ld)."""
     try:
         if not_chr_arg:
-            log.log(
-                "Reading {N} from {F} ... ({p})".format(
-                    N=noun, F=not_chr_arg, p=parsefunc.__name__
-                )
-            )
+            log.log(f"Reading {noun} from {not_chr_arg} ... ({parsefunc.__name__})")
             out = parsefunc(_splitp(not_chr_arg), **kwargs)
         elif chr_arg:
             f = ps.sub_chr(chr_arg, "[1-22]")
-            log.log(
-                "Reading {N} from {F} ... ({p})".format(
-                    N=noun, F=f, p=parsefunc.__name__
-                )
-            )
+            log.log(f"Reading {noun} from {f} ... ({parsefunc.__name__})")
             out = parsefunc(_splitp(chr_arg), _N_CHR, **kwargs)
     except ValueError as e:
-        log.log("Error parsing {N}.".format(N=noun))
+        log.log(f"Error parsing {noun}.")
         raise e
 
     return out
@@ -193,16 +187,14 @@ def _read_chr_split_files(chr_arg, not_chr_arg, log, noun, parsefunc, **kwargs):
 
 def _read_sumstats(args, log, fh, alleles=False, dropna=False):
     """Parse summary statistics."""
-    log.log("Reading summary statistics from {S} ...".format(S=fh))
+    log.log(f"Reading summary statistics from {fh} ...")
     sumstats = ps.sumstats(fh, alleles=alleles, dropna=dropna)
     log_msg = "Read summary statistics for {N} SNPs."
     log.log(log_msg.format(N=len(sumstats)))
     m = len(sumstats)
     sumstats = sumstats.drop_duplicates(subset="SNP")
     if m > len(sumstats):
-        log.log(
-            "Dropped {M} SNPs with duplicated rs numbers.".format(M=m - len(sumstats))
-        )
+        log.log(f"Dropped {m - len(sumstats)} SNPs with duplicated rs numbers.")
 
     return sumstats
 
@@ -244,19 +236,19 @@ def _warn_length(log, sumstats):
 
 def _print_cov(ldscore_reg, ofh, log):
     """Prints covariance matrix of slopes."""
-    log.log("Printing covariance matrix of the estimates to {F}.".format(F=ofh))
+    log.log(f"Printing covariance matrix of the estimates to {ofh}.")
     np.savetxt(ofh, ldscore_reg.coef_cov)
 
 
 def _print_delete_values(ldscore_reg, ofh, log):
     """Prints block jackknife delete-k values"""
-    log.log("Printing block jackknife delete values to {F}.".format(F=ofh))
+    log.log(f"Printing block jackknife delete values to {ofh}.")
     np.savetxt(ofh, ldscore_reg.tot_delete_values)
 
 
 def _print_part_delete_values(ldscore_reg, ofh, log):
     """Prints partitioned block jackknife delete-k values"""
-    log.log("Printing partitioned block jackknife delete values to {F}.".format(F=ofh))
+    log.log(f"Printing partitioned block jackknife delete values to {ofh}.")
     np.savetxt(ofh, ldscore_reg.part_delete_values)
 
 
@@ -311,12 +303,10 @@ def cell_type_specific(args, log):
     else:
         chisq_max = args.chisq_max
 
-    ii = np.ravel(sumstats.Z**2 < chisq_max)
+    ii = np.ravel(chisq_max > sumstats.Z**2)
     sumstats = sumstats.iloc[ii, :]
     log.log(
-        "Removed {M} SNPs with chi^2 > {C} ({N} SNPs remain)".format(
-            C=chisq_max, N=np.sum(ii), M=n_snp - np.sum(ii)
-        )
+        f"Removed {n_snp - np.sum(ii)} SNPs with chi^2 > {chisq_max} ({np.sum(ii)} SNPs remain)"
     )
     n_snp = np.sum(ii)  # lambdas are late-binding, so this works
     ref_ld_all_regr = np.array(sumstats[ref_ld_cnames_all_regr]).reshape(
@@ -411,16 +401,14 @@ def estimate_h2(args, log):
         ii = np.ravel(chisq < chisq_max)
         sumstats = sumstats.iloc[ii, :]
         log.log(
-            "Removed {M} SNPs with chi^2 > {C} ({N} SNPs remain)".format(
-                C=chisq_max, N=np.sum(ii), M=n_snp - np.sum(ii)
-            )
+            f"Removed {n_snp - np.sum(ii)} SNPs with chi^2 > {chisq_max} ({np.sum(ii)} SNPs remain)"
         )
         n_snp = np.sum(ii)  # lambdas are late-binding, so this works
         ref_ld = np.array(sumstats[ref_ld_cnames])
         chisq = chisq[ii].reshape((n_snp, 1))
 
     if args.two_step is not None:
-        log.log("Using two-step estimator with cutoff at {M}.".format(M=args.two_step))
+        log.log(f"Using two-step estimator with cutoff at {args.two_step}.")
 
     hsqhat = reg.Hsq(
         chisq,
@@ -489,10 +477,10 @@ def estimate_rg(args, log):
     if n_annot == 1 and args.two_step is None and args.intercept_h2 is None:
         args.two_step = 30
     if args.two_step is not None:
-        log.log("Using two-step estimator with cutoff at {M}.".format(M=args.two_step))
+        log.log(f"Using two-step estimator with cutoff at {args.two_step}.")
 
     for i, p2 in enumerate(rg_paths[1:n_pheno]):
-        log.log("Computing rg for phenotype {I}/{N}".format(I=i + 2, N=len(rg_paths)))
+        log.log(f"Computing rg for phenotype {i + 2}/{len(rg_paths)}")
         try:
             loop = _read_other_sumstats(args, log, p2, sumstats, ref_ld_cnames)
             rghat = _rg(loop, args, log, M_annot, ref_ld_cnames, w_ld_cname, i)
@@ -548,8 +536,8 @@ def _get_rg_table(rg_paths, RG, args):
     if (
         args.samp_prev is not None
         and args.pop_prev is not None
-        and all((i is not None for i in args.samp_prev))
-        and all((i is not None for it in args.pop_prev))
+        and all(i is not None for i in args.samp_prev)
+        and all(i is not None for it in args.pop_prev)
     ):
         c = map(
             lambda x, y: reg.h2_obs_to_liab(1, x, y),
@@ -584,7 +572,7 @@ def _print_gencor(args, log, rghat, ref_ld_cnames, i, rg_paths, print_hsq1):
         log.log(l("\nHeritability of phenotype 1\n"))
         log.log(rghat.hsq1.summary(ref_ld_cnames, P=P[0], K=K[0]))
 
-    log.log(l("\nHeritability of phenotype {I}/{N}\n".format(I=i + 2, N=len(rg_paths))))
+    log.log(l(f"\nHeritability of phenotype {i + 2}/{len(rg_paths)}\n"))
     log.log(rghat.hsq2.summary(ref_ld_cnames, P=P[1], K=K[1]))
     log.log(l("\nGenetic Covariance\n"))
     log.log(rghat.gencov.summary(ref_ld_cnames, P=P, K=K))
@@ -624,7 +612,7 @@ def _rg(sumstats, args, log, M_annot, ref_ld_cnames, w_ld_cname, i):
     n_snp = len(sumstats)
     s = lambda x: np.array(x).reshape((n_snp, 1))
     if args.chisq_max is not None:
-        ii = sumstats.Z1**2 * sumstats.Z2**2 < args.chisq_max**2
+        ii = args.chisq_max**2 > sumstats.Z1**2 * sumstats.Z2**2
         n_snp = np.sum(ii)  # lambdas are late binding, so this works
         sumstats = sumstats[ii]
     n_blocks = min(args.n_blocks, n_snp)
@@ -687,6 +675,4 @@ def _split_or_none(x, n):
 def _check_arg_len(x, n):
     x, m = x
     if len(x) != n:
-        raise ValueError(
-            "{M} must have the same number of arguments as --rg/--h2.".format(M=m)
-        )
+        raise ValueError(f"{m} must have the same number of arguments as --rg/--h2.")
