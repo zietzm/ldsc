@@ -131,8 +131,7 @@ numeric_cols = [
 
 def read_header(fh):
     """Read the first line of a file and returns a list with the column names."""
-    (openfunc, compression) = get_compression(fh)
-    return [x.rstrip("\n") for x in openfunc(fh).readline().split()]
+    return pd.read_csv(fh, sep=r"\s+", nrows=0, compression="infer").columns.tolist()
 
 
 def get_cname_map(flag, default, ignore):
@@ -154,26 +153,6 @@ def get_cname_map(flag, default, ignore):
         {x: default[x] for x in default if x not in clean_ignore + list(flag.keys())}
     )
     return cname_map
-
-
-def get_compression(fh):
-    """
-    Read filename suffixes and figure out whether it is gzipped,bzip2'ed or not compressed
-    """
-    if fh.endswith("gz"):
-        compression = "gzip"
-        openfunc = gzip.open
-    elif fh.endswith("bz2"):
-        compression = "bz2"
-        openfunc = bz2.BZ2File
-    elif fh.endswith("zst"):
-        compression = "zstd"
-        openfunc = pyzstd.open
-    else:
-        openfunc = open
-        compression = None
-
-    return openfunc, compression
 
 
 def clean_header(header):
@@ -794,10 +773,9 @@ def munge_sumstats(args, p=True):
 
         if args.merge_alleles:
             log.log(f"Reading list of SNPs for allele merge from {args.merge_alleles}")
-            (openfunc, compression) = get_compression(args.merge_alleles)
             merge_alleles = pd.read_csv(
                 args.merge_alleles,
-                compression=compression,
+                compression="infer",
                 header=0,
                 sep=r"\s+",
                 na_values=".",
@@ -817,8 +795,6 @@ def munge_sumstats(args, p=True):
         else:
             merge_alleles = None
 
-        (openfunc, compression) = get_compression(args.sumstats)
-
         # figure out which columns are going to involve sign information, so we can ensure
         # they're read as floats
         signed_sumstat_cols = [
@@ -828,7 +804,7 @@ def munge_sumstats(args, p=True):
             args.sumstats,
             sep=r"\s+",
             header=0,
-            compression=compression,
+            compression="infer",
             usecols=cname_translation.keys(),
             na_values=[".", "NA"],
             iterator=True,

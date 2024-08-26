@@ -217,15 +217,6 @@ def test_clean_header():
     assert munge.clean_header("foo-bar.foo_BaR") == "FOO_BAR_FOO_BAR"
 
 
-def test_get_compression_gzip():
-    _, x = munge.get_compression("foo.gz")
-    assert x == "gzip"
-    _, x = munge.get_compression("foo.bz2")
-    assert x == "bz2"
-    _, x = munge.get_compression("foo.bar")
-    assert x is None
-
-
 class test_parse_flag_cnames(unittest.TestCase):
     def setUp(self):
         self.args = munge.parser.parse_args("")
