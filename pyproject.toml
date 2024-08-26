@@ -1,0 +1,25 @@
+[project]
+name = "ldsc"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "bitarray>=2.9.2",
+    "pybedtools>=0.10.0",
+    "scipy>=1.14.1",
+    "numpy>=2.1.0",
+    "pandas>=2.2.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.2",
+]
+
+[project.scripts]
+ldsc = "ldsc.scripts.ldsc:main"

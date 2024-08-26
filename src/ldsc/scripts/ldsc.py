@@ -8,6 +8,7 @@ LDSC is a command line tool for estimating
     3. genetic covariance / correlation
 
 """
+
 from __future__ import division
 
 import argparse
@@ -21,21 +22,21 @@ from subprocess import call
 import numpy as np
 import pandas as pd
 
-import ldscore.ldscore as ld
-import ldscore.parse as ps
-import ldscore.regressions as reg
-import ldscore.sumstats as sumstats
+import ldsc.ldscore as ld
+import ldsc.parse as ps
+import ldsc.regressions as reg
+import ldsc.sumstats as sumstats
 
 try:
     x = pd.DataFrame({"A": [1, 2, 3]})
     x.sort_values(by="A")
-except AttributeError:
-    raise ImportError("LDSC requires pandas version >= 0.17.0")
+except AttributeError as e:
+    raise ImportError("LDSC requires pandas version >= 0.17.0") from e
 
 __version__ = "1.0.1"
 MASTHEAD = "*********************************************************************\n"
 MASTHEAD += "* LD Score Regression (LDSC)\n"
-MASTHEAD += "* Version {V}\n".format(V=__version__)
+MASTHEAD += f"* Version {__version__}\n"
 MASTHEAD += "* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane\n"
 MASTHEAD += "* Broad Institute of MIT and Harvard / MIT Department of Mathematics\n"
 MASTHEAD += "* GNU General Public License v3\n"
@@ -56,13 +57,13 @@ def sec_to_str(t):
     )
     f = ""
     if d > 0:
-        f += "{D}d:".format(D=d)
+        f += f"{d}d:"
     if h > 0:
-        f += "{H}h:".format(H=h)
+        f += f"{h}h:"
     if m > 0:
-        f += "{M}m:".format(M=m)
+        f += f"{m}m:"
 
-    f += "{S}s".format(S=s)
+    f += f"{s}s"
     return f
 
 
@@ -74,7 +75,7 @@ def _remove_dtype(x):
     return x
 
 
-class Logger(object):
+class Logger:
     """
     Lightweight logging.
     TODO: replace with logging module
@@ -114,7 +115,7 @@ def __filter__(fname, noun, verb, merge_obj):
 
 def annot_sort_key(s):
     """For use with --cts-bin. Fixes weird pandas crosstab column order."""
-    if type(s) == tuple:
+    if isinstance(s, tuple):
         s = [x.split("_")[0] for x in s]
         s = map(lambda x: float(x) if x != "min" else -float("inf"), s)
     else:  # type(s) = str:
@@ -220,7 +221,7 @@ def ldscore(args, log):
         cts_levs = []
         full_labs = []
         for i, fh in enumerate(cts_fnames):
-            vec = ps.read_cts(cts_fnames[i], array_snps.df.SNP.values)
+            vec = ps.read_cts(fh, array_snps.df.SNP.values)
 
             max_cts = np.max(vec)
             min_cts = np.min(vec)
@@ -340,6 +341,8 @@ def ldscore(args, log):
     elif args.ld_wind_cm:
         max_dist = args.ld_wind_cm
         coords = np.array(array_snps.df["CM"])[geno_array.kept_snps]
+    else:
+        raise ValueError("Must specify one of --ld-wind-* options.")
 
     block_left = ld.getBlockLefts(coords, max_dist)
     if block_left[len(block_left) - 1] == 0 and not args.yes_really:
@@ -372,6 +375,7 @@ def ldscore(args, log):
     if n_annot == 1:
         ldscore_colnames = [col_prefix + scale_suffix]
     else:
+        assert annot_colnames is not None
         ldscore_colnames = [y + col_prefix + scale_suffix for y in annot_colnames]
 
     # print .ldscore. Output columns: CHR, BP, RS, [LD Scores]
@@ -421,14 +425,12 @@ def ldscore(args, log):
         M_5_50 = [np.sum(geno_array.maf > 0.05)]
 
     # print .M
-    fout_M = open(args.out + "." + file_suffix + ".M", "w")
-    print("\t".join(map(str, M)), file=fout_M)
-    fout_M.close()
+    with open(args.out + "." + file_suffix + ".M", "w") as fout_M:
+        print("\t".join(map(str, M)), file=fout_M)
 
     # print .M_5_50
-    fout_M_5_50 = open(args.out + "." + file_suffix + ".M_5_50", "w")
-    print("\t".join(map(str, M_5_50)), file=fout_M_5_50)
-    fout_M_5_50.close()
+    with open(args.out + "." + file_suffix + ".M_5_50", "w") as fout_M_5_50:
+        print("\t".join(map(str, M_5_50)), file=fout_M_5_50)
 
     # print annot matrix
     if (args.cts_bin is not None) and not args.no_print_annot:
@@ -447,7 +449,7 @@ def ldscore(args, log):
 
     # print LD Score summary
     pd.set_option("display.max_rows", 200)
-    log.log("\nSummary of LD Scores in {F}".format(F=out_fname + l2_suffix))
+    log.log(f"\nSummary of LD Scores in {out_fname + l2_suffix}")
     t = df.ix[:, 4:].describe()
     log.log(t.ix[1:, :])
 
@@ -819,7 +821,8 @@ parser.add_argument(
     help="Population prevalence of binary phenotype (for conversion to liability scale).",
 )
 
-if __name__ == "__main__":
+
+def main():
     args = parser.parse_args()
     if args.out is None:
         raise ValueError("--out is required.")
@@ -828,7 +831,7 @@ if __name__ == "__main__":
     try:
         defaults = vars(parser.parse_args(""))
         opts = vars(args)
-        non_defaults = [x for x in opts.keys() if opts[x] != defaults[x]]
+        non_defaults = [x for x in opts if opts[x] != defaults[x]]
         header = MASTHEAD
         header += "Call: \n"
         header += "./ldsc.py \\\n"
@@ -839,7 +842,7 @@ if __name__ == "__main__":
         header += "\n".join(options).replace("True", "").replace("False", "")
         header = header[0:-1] + "\n"
         log.log(header)
-        log.log("Beginning analysis at {T}".format(T=time.ctime()))
+        log.log(f"Beginning analysis at {time.ctime()}")
         start_time = time.time()
         if args.n_blocks <= 1:
             raise ValueError("--n-blocks must be an integer > 1.")
@@ -912,6 +915,6 @@ if __name__ == "__main__":
         log.log(traceback.format_exc(ex))
         raise
     finally:
-        log.log("Analysis finished at {T}".format(T=time.ctime()))
+        log.log(f"Analysis finished at {time.ctime()}")
         time_elapsed = round(time.time() - start_time, 2)
-        log.log("Total time elapsed: {T}".format(T=sec_to_str(time_elapsed)))
+        log.log(f"Total time elapsed: {sec_to_str(time_elapsed)}")

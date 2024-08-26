@@ -7,7 +7,6 @@ Shape convention is (n_snp, n_annot) for all classes.
 Last column = intercept.
 
 """
-from __future__ import division
 
 from collections import namedtuple
 
@@ -16,8 +15,8 @@ import pandas as pd
 from scipy.stats import chi2, norm
 from scipy.stats import t as tdist
 
-import ldscore.jackknife as jk
-from ldscore.irwls import IRWLS
+import ldsc.jackknife as jk
+from ldsc.irwls import IRWLS
 
 np.seterr(divide="raise", invalid="raise")
 
@@ -140,7 +139,7 @@ def h2_obs_to_liab(h2_obs, P, K):
     return h2_obs * conversion_factor
 
 
-class LD_Score_Regression(object):
+class LD_Score_Regression:
     def __init__(
         self,
         y,
@@ -174,8 +173,8 @@ class LD_Score_Regression(object):
             try:
                 if len(i.shape) != 2:
                     raise TypeError("Arguments must be 2D arrays.")
-            except AttributeError:
-                raise TypeError("Arguments must be arrays.")
+            except AttributeError as e:
+                raise TypeError("Arguments must be arrays.") from e
 
         n_snp, self.n_annot = x.shape
         if any(i.shape != (n_snp, 1) for i in [y, w, N]):
@@ -356,9 +355,7 @@ class LD_Score_Regression(object):
         delete_values[:, n_annot] = step1_jknife.delete_values[:, n_annot]
         delete_values[:, 0:n_annot] = step2_jknife.delete_values - c * (
             step1_jknife.delete_values[:, n_annot] - step1_int
-        ).reshape(
-            (n_blocks, n_annot)
-        )  # check this
+        ).reshape((n_blocks, n_annot))  # check this
         pseudovalues = jk.Jackknife.delete_values_to_pseudovalues(delete_values, est)
         jknife_est, jknife_var, jknife_se, jknife_cov = jk.Jackknife.jknife(
             pseudovalues
