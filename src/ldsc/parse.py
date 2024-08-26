@@ -18,7 +18,7 @@ def series_eq(x, y):
 
 
 def read_csv(fh, **kwargs):
-    return pd.read_csv(fh, sep=r"\s+", na_values=".", **kwargs)
+    return pd.read_csv(fh, sep=r"\s+", na_values=".", compression="infer", **kwargs)
 
 
 def sub_chr(s, chrom):
@@ -49,6 +49,9 @@ def which_compression(fh):
     elif os.access(fh, 4):
         suffix = ""
         compression = None
+    elif os.access(fh + ".zst", 4):
+        suffix = ".zst"
+        compression = "zstd"
     else:
         raise OSError(f"Could not open {fh}[./gz/bz2]")
 
@@ -61,6 +64,8 @@ def get_compression(fh):
         compression = "gzip"
     elif fh.endswith("bz2"):
         compression = "bz2"
+    elif fh.endswith("zst"):
+        compression = "zstd"
     else:
         compression = None
 
@@ -69,8 +74,7 @@ def get_compression(fh):
 
 def read_cts(fh, match_snps):
     """Reads files for --cts-bin."""
-    compression = get_compression(fh)
-    cts = read_csv(fh, compression=compression, header=None, names=["SNP", "ANNOT"])
+    cts = read_csv(fh, header=None, names=["SNP", "ANNOT"])
     if not series_eq(cts.SNP, match_snps):
         raise ValueError("--cts-bin and the .bim file must have identical SNP columns.")
 
@@ -80,13 +84,12 @@ def read_cts(fh, match_snps):
 def sumstats(fh, alleles=False, dropna=True):
     """Parses .sumstats files. See docs/file_formats_sumstats.txt."""
     dtype_dict = {"SNP": str, "Z": float, "N": float, "A1": str, "A2": str}
-    compression = get_compression(fh)
     usecols = ["SNP", "Z", "N"]
     if alleles:
         usecols += ["A1", "A2"]
 
     try:
-        x = read_csv(fh, usecols=usecols, dtype=dtype_dict, compression=compression)
+        x = read_csv(fh, usecols=usecols, dtype=dtype_dict)
     except (AttributeError, ValueError) as e:
         raise ValueError(f"Improperly formatted sumstats file: {e.args}") from e
 
@@ -116,9 +119,9 @@ def ldscore_fromlist(flist, num=None):
     return pd.concat(ldscore_array, axis=1)
 
 
-def l2_parser(fh, compression):
+def l2_parser(fh):
     """Parse LD Score files"""
-    x = read_csv(fh, header=0, compression=compression)
+    x = read_csv(fh, header=0)
     if (
         "MAF" in x.columns and "CM" in x.columns
     ):  # for backwards compatibility w/ v<1.0.0
@@ -126,22 +129,22 @@ def l2_parser(fh, compression):
     return x
 
 
-def annot_parser(fh, compression, frqfile_full=None, compression_frq=None):
+def annot_parser(fh, frqfile_full=None):
     """Parse annot files"""
     df_annot = (
-        read_csv(fh, header=0, compression=compression)
+        read_csv(fh, header=0)
         .drop(["SNP", "CHR", "BP", "CM"], axis=1, errors="ignore")
         .astype(float)
     )
     if frqfile_full is not None:
-        df_frq = frq_parser(frqfile_full, compression_frq)
+        df_frq = frq_parser(frqfile_full)
         df_annot = df_annot[(df_frq.FRQ < 0.95) & (df_frq.FRQ > 0.05)]
     return df_annot
 
 
-def frq_parser(fh, compression):
+def frq_parser(fh):
     """Parse frequency files."""
-    df = read_csv(fh, header=0, compression=compression)
+    df = read_csv(fh, header=0)
     if "MAF" in df.columns:
         df.rename(columns={"MAF": "FRQ"}, inplace=True)
     return df[["SNP", "FRQ"]]
@@ -154,12 +157,12 @@ def ldscore(fh, num=None):
         chrs = get_present_chrs(fh, num + 1)
         print(chrs, fh, num)
         first_fh = sub_chr(fh, chrs[0]) + suffix
-        s, compression = which_compression(first_fh)
-        chr_ld = [l2_parser(sub_chr(fh, i) + suffix + s, compression) for i in chrs]
+        s, _ = which_compression(first_fh)
+        chr_ld = [l2_parser(sub_chr(fh, i) + suffix + s) for i in chrs]
         x = pd.concat(chr_ld)  # automatically sorted by chromosome
     else:  # just one file
-        s, compression = which_compression(fh + suffix)
-        x = l2_parser(fh + suffix + s, compression)
+        s, _ = which_compression(fh + suffix)
+        x = l2_parser(fh + suffix + s)
 
     x = x.sort_values(by=["CHR", "BP"])  # SEs will be wrong unless sorted
     x = x.drop(["CHR", "BP"], axis=1).drop_duplicates(subset="SNP")
@@ -219,17 +222,13 @@ def annot(fh_list, num=None, frqfile=None):
                 df_annot_chr_list = [
                     annot_parser(
                         sub_chr(fh, chrom) + annot_suffix[i],
-                        annot_compression[i],
                         sub_chr(frqfile, chrom) + frq_suffix,
-                        frq_compression,
                     )
                     for i, fh in enumerate(fh_list)
                 ]
             else:
                 df_annot_chr_list = [
-                    annot_parser(
-                        sub_chr(fh, chrom) + annot_suffix[i], annot_compression[i]
-                    )
+                    annot_parser(sub_chr(fh, chrom) + annot_suffix[i])
                     for i, fh in enumerate(fh_list)
                 ]
 
@@ -253,19 +252,13 @@ def annot(fh_list, num=None, frqfile=None):
             frq_suffix += frq_s
 
             df_annot_list = [
-                annot_parser(
-                    fh + annot_suffix[i],
-                    annot_compression[i],
-                    frqfile + frq_suffix,
-                    frq_compression,
-                )
+                annot_parser(fh + annot_suffix[i], frqfile + frq_suffix)
                 for i, fh in enumerate(fh_list)
             ]
 
         else:
             df_annot_list = [
-                annot_parser(fh + annot_suffix[i], annot_compression[i])
-                for i, fh in enumerate(fh_list)
+                annot_parser(fh + annot_suffix[i]) for i, fh in enumerate(fh_list)
             ]
 
         annot_matrix_list = [np.array(y) for y in df_annot_list]
@@ -292,13 +285,11 @@ def __ID_List_Factory__(colnames, keepcol, fname_end, header=None, usecols=None)
             if end and not fname.endswith(end):
                 raise ValueError(f"{end} filename must end in {end}")
 
-            comp = get_compression(fname)
             self.df = pd.read_csv(
                 fname,
                 header=self.__header__,
                 usecols=self.__usecols__,
                 sep=r"\s+",
-                compression=comp,
             )
 
             if self.__colnames__:

@@ -380,12 +380,7 @@ def ldscore(args, log):
     df = pd.DataFrame.from_records(np.c_[geno_array.df, lN])
     df.columns = new_colnames
     if args.print_snps:
-        if args.print_snps.endswith("gz"):
-            print_snps = pd.read_csv(args.print_snps, header=None, compression="gzip")
-        elif args.print_snps.endswith("bz2"):
-            print_snps = pd.read_csv(args.print_snps, header=None, compression="bz2")
-        else:
-            print_snps = pd.read_csv(args.print_snps, header=None)
+        print_snps = pd.read_csv(args.print_snps, header=None, compression="infer")
         if len(print_snps.columns) > 1:
             raise ValueError(
                 "--print-snps must refer to a file with a one column of SNP IDs."

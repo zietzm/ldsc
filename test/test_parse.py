@@ -46,11 +46,11 @@ def test_read_sumstats():
 
 
 def test_frq_parser():
-    x = ps.frq_parser(os.path.join(DIR, "parse_test/test1.frq"), compression=None)
+    x = ps.frq_parser(os.path.join(DIR, "parse_test/test1.frq"))
     assert_array_equal(x.columns, ["SNP", "FRQ"])
     assert_array_equal(x.SNP, ["rs_" + str(i) for i in range(8)])
     assert_array_equal(x.FRQ, [0.01, 0.1, 0.7, 0.2, 0.2, 0.2, 0.99, 0.03])
-    x = ps.frq_parser(os.path.join(DIR, "parse_test/test2.frq.gz"), compression="gzip")
+    x = ps.frq_parser(os.path.join(DIR, "parse_test/test2.frq.gz"))
     assert_array_equal(x.columns, ["SNP", "FRQ"])
     assert_array_equal(x.SNP, ["rs_" + str(i) for i in range(8)])
     assert_array_equal(x.FRQ, [0.01, 0.1, 0.3, 0.2, 0.2, 0.2, 0.01, 0.03])
