@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 import pandas as pd
+import pyzstd
 from scipy.stats import chi2
 
 from ldsc import sumstats
@@ -165,6 +166,9 @@ def get_compression(fh):
     elif fh.endswith("bz2"):
         compression = "bz2"
         openfunc = bz2.BZ2File
+    elif fh.endswith("zst"):
+        compression = "zstd"
+        openfunc = pyzstd.open
     else:
         openfunc = open
         compression = None
