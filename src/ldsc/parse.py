@@ -5,8 +5,6 @@ This module contains functions for parsing various ldsc-defined file formats.
 
 """
 
-from __future__ import division
-
 import glob
 import os
 
@@ -52,7 +50,7 @@ def which_compression(fh):
         suffix = ""
         compression = None
     else:
-        raise IOError("Could not open {F}[./gz/bz2]".format(F=fh))
+        raise OSError(f"Could not open {fh}[./gz/bz2]")
 
     return suffix, compression
 
@@ -90,7 +88,7 @@ def sumstats(fh, alleles=False, dropna=True):
     try:
         x = read_csv(fh, usecols=usecols, dtype=dtype_dict, compression=compression)
     except (AttributeError, ValueError) as e:
-        raise ValueError("Improperly formatted sumstats file: " + str(e.args))
+        raise ValueError(f"Improperly formatted sumstats file: {e.args}") from e
 
     if dropna:
         x = x.dropna(how="any")
@@ -137,7 +135,7 @@ def annot_parser(fh, compression, frqfile_full=None, compression_frq=None):
     )
     if frqfile_full is not None:
         df_frq = frq_parser(frqfile_full, compression_frq)
-        df_annot = df_annot[(0.95 > df_frq.FRQ) & (df_frq.FRQ > 0.05)]
+        df_annot = df_annot[(df_frq.FRQ < 0.95) & (df_frq.FRQ > 0.05)]
     return df_annot
 
 
@@ -170,7 +168,7 @@ def ldscore(fh, num=None):
 
 def M(fh, num=None, N=2, common=False):
     """Parses .l{N}.M files, split across num chromosomes. See docs/file_formats_ld.txt."""
-    parsefunc = lambda y: [float(z) for z in open(y, "r").readline().split()]
+    parsefunc = lambda y: [float(z) for z in open(y).readline().split()]
     suffix = ".l" + str(N) + ".M"
     if common:
         suffix += "_5_50"
@@ -198,7 +196,7 @@ def annot(fh_list, num=None, frqfile=None):
     output of parallelizing ldsc.py --l2 across chromosomes).
 
     """
-    annot_suffix = [".annot" for fh in fh_list]
+    annot_suffix = [".annot" for _ in fh_list]
     annot_compression = []
     if num is not None:  # 22 files, one for each chromosome
         chrs = get_present_chrs(fh, num + 1)
@@ -279,7 +277,7 @@ def annot(fh_list, num=None, frqfile=None):
 
 
 def __ID_List_Factory__(colnames, keepcol, fname_end, header=None, usecols=None):
-    class IDContainer(object):
+    class IDContainer:
         def __init__(self, fname):
             self.__usecols__ = usecols
             self.__colnames__ = colnames
@@ -292,14 +290,14 @@ def __ID_List_Factory__(colnames, keepcol, fname_end, header=None, usecols=None)
         def __read__(self, fname):
             end = self.__fname_end__
             if end and not fname.endswith(end):
-                raise ValueError("{f} filename must end in {f}".format(f=end))
+                raise ValueError(f"{end} filename must end in {end}")
 
             comp = get_compression(fname)
             self.df = pd.read_csv(
                 fname,
                 header=self.__header__,
                 usecols=self.__usecols__,
-                delim_whitespace=True,
+                sep=r"\s+",
                 compression=comp,
             )
 
@@ -311,12 +309,17 @@ def __ID_List_Factory__(colnames, keepcol, fname_end, header=None, usecols=None)
 
         def loj(self, externalDf):
             """Returns indices of those elements of self.IDList that appear in exernalDf."""
-            r = externalDf.columns[0]
-            l = self.IDList.columns[0]
+            right = externalDf.columns[0]
+            left = self.IDList.columns[0]
             merge_df = externalDf.iloc[:, [0]]
             merge_df["keep"] = True
             z = pd.merge(
-                self.IDList, merge_df, how="left", left_on=l, right_on=r, sort=False
+                self.IDList,
+                merge_df,
+                how="left",
+                left_on=left,
+                right_on=right,
+                sort=False,
             )
             ii = z["keep"] == True
             return np.nonzero(ii)[0]
