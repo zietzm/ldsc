@@ -818,8 +818,7 @@ parser.add_argument(
 )
 
 
-def main():
-    args = parser.parse_args()
+def main(args):
     if args.out is None:
         raise ValueError("--out is required.")
 
@@ -912,3 +911,8 @@ def main():
         log.log(f"Analysis finished at {time.ctime()}")
         time_elapsed = round(time.time() - start_time, 2)
         log.log(f"Total time elapsed: {sec_to_str(time_elapsed)}")
+
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    main(args)
