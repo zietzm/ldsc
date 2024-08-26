@@ -9,8 +9,6 @@ regression is implemented in the regressions module.
 import copy
 import itertools as it
 import os
-import sys
-import traceback
 
 import numpy as np
 import pandas as pd
@@ -81,7 +79,7 @@ def smart_merge(x, y):
     """Check if SNP columns are equal. If so, save time by using concat instead of merge."""
     if len(x) == len(y) and (x.index == y.index).all() and (x.SNP == y.SNP).all():
         x = x.reset_index(drop=True)
-        y = y.reset_index(drop=True).drop("SNP", 1)
+        y = y.reset_index(drop=True).drop(columns=["SNP"])
         out = pd.concat([x, y], axis=1)
     else:
         out = pd.merge(x, y, how="inner", on="SNP")
@@ -495,8 +493,6 @@ def estimate_rg(args, log):
         except Exception:  # keep going if phenotype 50/100 causes an error
             msg = "ERROR computing rg for phenotype {I}/{N}, from file {F}."
             log.log(msg.format(I=i + 2, N=len(rg_paths), F=rg_paths[i + 1]))
-            ex_type, ex, tb = sys.exc_info()
-            log.log(traceback.format_exc(ex) + "\n")
             if len(RG) <= i:  # if exception raised before appending to RG
                 RG.append(None)
 

@@ -9,12 +9,8 @@ LDSC is a command line tool for estimating
 
 """
 
-from __future__ import division
-
 import argparse
-import sys
 import time
-import traceback
 from functools import reduce
 from itertools import product
 from subprocess import call
@@ -600,7 +596,7 @@ parser.add_argument(
     default=False,
     action="store_true",
     help="Setting this flag causes LDSC to compute per-allele LD Scores, "
-    "i.e., \ell_j := \sum_k p_k(1-p_k)r^2_{jk}, where p_k denotes the MAF "
+    r"i.e., \ell_j := \sum_k p_k(1-p_k)r^2_{jk}, where p_k denotes the MAF "
     "of SNP j. ",
 )
 parser.add_argument(
@@ -608,7 +604,7 @@ parser.add_argument(
     default=None,
     type=float,
     help="Setting this flag causes LDSC to compute LD Scores with the given scale factor, "
-    "i.e., \ell_j := \sum_k (p_k(1-p_k))^a r^2_{jk}, where p_k denotes the MAF "
+    r"i.e., \ell_j := \sum_k (p_k(1-p_k))^a r^2_{jk}, where p_k denotes the MAF "
     "of SNP j and a is the argument to --pq-exp. ",
 )
 parser.add_argument(
@@ -910,10 +906,8 @@ def main():
             print(header)
             print("Error: no analysis selected.")
             print("ldsc.py -h describes options.")
-    except Exception:
-        ex_type, ex, tb = sys.exc_info()
-        log.log(traceback.format_exc(ex))
-        raise
+    except Exception as e:
+        raise e
     finally:
         log.log(f"Analysis finished at {time.ctime()}")
         time_elapsed = round(time.time() - start_time, 2)
