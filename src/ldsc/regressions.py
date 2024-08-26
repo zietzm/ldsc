@@ -20,7 +20,7 @@ from ldsc.irwls import IRWLS
 
 np.seterr(divide="raise", invalid="raise")
 
-s = lambda x: remove_brackets(str(np.matrix(x)))
+s = lambda x: remove_brackets(str(np.array([[x]])))
 
 
 def update_separators(s, ii):
@@ -54,12 +54,12 @@ def append_intercept(x):
 
     Parameters
     ----------
-    x : np.matrix with shape (n_row, n_col)
+    x : np.array with shape (n_row, n_col)
         Design matrix. Columns are predictors; rows are observations.
 
     Returns
     -------
-    x_new : np.matrix with shape (n_row, n_col+1)
+    x_new : np.array with shape (n_row, n_col+1)
         Design matrix with intercept term appended.
 
     """
@@ -606,12 +606,12 @@ class Hsq(LD_Score_Regression):
 
         Parameters
         ----------
-        ld : np.matrix with shape (n_snp, 1)
+        ld : np.array with shape (n_snp, 1)
             LD Scores (non-partitioned).
-        w_ld : np.matrix with shape (n_snp, 1)
+        w_ld : np.array with shape (n_snp, 1)
             LD Scores (non-partitioned) computed with sum r^2 taken over only those SNPs included
             in the regression.
-        N :  np.matrix of ints > 0 with shape (n_snp, 1)
+        N :  np.array of ints > 0 with shape (n_snp, 1)
             Number of individuals sampled for each SNP.
         M : float > 0
             Number of SNPs used for estimating LD Score (need not equal number of SNPs included in
@@ -621,10 +621,12 @@ class Hsq(LD_Score_Regression):
 
         Returns
         -------
-        w : np.matrix with shape (n_snp, 1)
+        w : np.array with shape (n_snp, 1)
             Regression weights. Approx equal to reciprocal of conditional variance function.
 
         """
+        if isinstance(M, np.ndarray):
+            M = M.item()
         M = float(M)
         if intercept is None:
             intercept = 1
@@ -804,15 +806,15 @@ class Gencov(LD_Score_Regression):
 
         Parameters
         ----------
-        ld : np.matrix with shape (n_snp, 1)
+        ld : np.array with shape (n_snp, 1)
             LD Scores (non-partitioned)
-        w_ld : np.matrix with shape (n_snp, 1)
+        w_ld : np.array with shape (n_snp, 1)
             LD Scores (non-partitioned) computed with sum r^2 taken over only those SNPs included
             in the regression.
         M : float > 0
             Number of SNPs used for estimating LD Score (need not equal number of SNPs included in
             the regression).
-        N1, N2 :  np.matrix of ints > 0 with shape (n_snp, 1)
+        N1, N2 :  np.array of ints > 0 with shape (n_snp, 1)
             Number of individuals sampled for each SNP for each study.
         h1, h2 : float in [0,1]
             Heritability estimates for each study.
@@ -823,7 +825,7 @@ class Gencov(LD_Score_Regression):
 
         Returns
         -------
-        w : np.matrix with shape (n_snp, 1)
+        w : np.array with shape (n_snp, 1)
             Regression weights. Approx equal to reciprocal of conditional variance function.
 
         """
@@ -953,8 +955,14 @@ class RG(object):
             rg = jk.RatioJackknife(
                 rg_ratio, gencov.tot_delete_values, denom_delete_values
             )
+            if isinstance(rg.jknife_est, np.ndarray):
+                rg.jknife_est = rg.jknife_est.item()
             self.rg_jknife = float(rg.jknife_est)
+            if isinstance(rg.jknife_se, np.ndarray):
+                rg.jknife_se = rg.jknife_se.item()
             self.rg_se = float(rg.jknife_se)
+            if isinstance(rg_ratio, np.ndarray):
+                rg_ratio = rg_ratio.item()
             self.rg_ratio = float(rg_ratio)
             self.p, self.z = p_z_norm(self.rg_ratio, self.rg_se)
 

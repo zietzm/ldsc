@@ -284,7 +284,7 @@ def ldscore(args, log):
         else:
             annot_colnames = [cts_colnames[0] + "_" + b for b in annot_matrix.columns]
 
-        annot_matrix = np.matrix(annot_matrix)
+        annot_matrix = np.array(annot_matrix)
         keep_snps = None
         n_annot = len(annot_colnames)
         if np.any(np.sum(annot_matrix, axis=1) == 0):
@@ -359,7 +359,7 @@ def ldscore(args, log):
         msg += "not directly comparable to normal LD Scores."
         log.log(msg)
         scale_suffix = "_S{S}".format(S=args.pq_exp)
-        pq = np.matrix(geno_array.maf * (1 - geno_array.maf)).reshape((geno_array.m, 1))
+        pq = np.array(geno_array.maf * (1 - geno_array.maf)).reshape((geno_array.m, 1))
         pq = np.power(pq, args.pq_exp)
 
         if annot_matrix is not None:
@@ -465,7 +465,7 @@ def ldscore(args, log):
     ):  # condition number of a column vector w/ nonzero var is trivially one
         log.log("\nLD Score Matrix Condition Number")
         cond_num = np.linalg.cond(df.ix[:, 5:])
-        log.log(reg.remove_brackets(str(np.matrix(cond_num))))
+        log.log(reg.remove_brackets(str(np.array(cond_num))))
         if cond_num > 10000:
             log.log("WARNING: ill-conditioned LD Score Matrix!")
 

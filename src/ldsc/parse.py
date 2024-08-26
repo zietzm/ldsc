@@ -234,7 +234,7 @@ def annot(fh_list, num=None, frqfile=None):
                 ]
 
             annot_matrix_chr_list = [
-                np.matrix(df_annot_chr) for df_annot_chr in df_annot_chr_list
+                np.array(df_annot_chr) for df_annot_chr in df_annot_chr_list
             ]
             annot_matrix_chr = np.hstack(annot_matrix_chr_list)
             y.append(np.dot(annot_matrix_chr.T, annot_matrix_chr))
@@ -268,7 +268,7 @@ def annot(fh_list, num=None, frqfile=None):
                 for i, fh in enumerate(fh_list)
             ]
 
-        annot_matrix_list = [np.matrix(y) for y in df_annot_list]
+        annot_matrix_list = [np.array(y) for y in df_annot_list]
         annot_matrix = np.hstack(annot_matrix_list)
         x = np.dot(annot_matrix.T, annot_matrix)
         M_tot = len(df_annot_list[0])

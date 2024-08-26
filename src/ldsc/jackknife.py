@@ -12,8 +12,6 @@ of the data.
 
 """
 
-from __future__ import division
-
 import numpy as np
 from scipy.optimize import nnls
 
@@ -49,8 +47,7 @@ def _check_shape_block(xty_block_values, xtx_block_values):
     return xtx_block_values.shape[0:2]
 
 
-class Jackknife(object):
-
+class Jackknife:
     """
     Base class for jackknife objects. Input involves x,y, so this base class is tailored
     for statistics computed from independent and dependent variables (e.g., regressions).
@@ -59,9 +56,9 @@ class Jackknife(object):
 
     Parameters
     ----------
-    x : np.matrix with shape (n, p)
+    x : np.array with shape (n, p)
         Independent variable.
-    y : np.matrix with shape (n, 1)
+    y : np.array with shape (n, 1)
         Dependent variable.
     n_blocks : int
         Number of jackknife blocks
@@ -114,17 +111,17 @@ class Jackknife(object):
 
         Parameters
         ----------
-        pseudovalues : np.matrix pf floats with shape (n_blocks, p)
+        pseudovalues : np.array pf floats with shape (n_blocks, p)
 
         Returns
         -------
-        jknife_est : np.matrix with shape (1, p)
+        jknife_est : np.array with shape (1, p)
             Jackknifed estimate.
-        jknife_var : np.matrix with shape (1, p)
+        jknife_var : np.array with shape (1, p)
             Variance of jackknifed estimate.
-        jknife_se : np.matrix with shape (1, p)
+        jknife_se : np.array with shape (1, p)
             Standard error of jackknifed estimate, equal to sqrt(jknife_var).
-        jknife_cov : np.matrix with shape (p, p)
+        jknife_cov : np.array with shape (p, p)
             Covariance matrix of jackknifed estimate.
 
         """
@@ -142,14 +139,14 @@ class Jackknife(object):
 
         Parameters
         ----------
-        delete_values : np.matrix with shape (n_blocks, p)
+        delete_values : np.array with shape (n_blocks, p)
             Delete values.
-        est : np.matrix with shape (1, p):
+        est : np.array with shape (1, p):
             Whole-data estimate.
 
         Returns
         -------
-        pseudovalues : np.matrix with shape (n_blocks, p)
+        pseudovalues : np.array with shape (n_blocks, p)
             Psuedovalues.
 
         Raises
@@ -173,7 +170,6 @@ class Jackknife(object):
 
 
 class LstsqJackknifeSlow(Jackknife):
-
     """
     Slow linear-regression block jackknife. This class computes delete values directly,
     rather than forming delete values from block values. Useful for testing and for
@@ -184,9 +180,9 @@ class LstsqJackknifeSlow(Jackknife):
 
     Parameters
     ----------
-    x : np.matrix with shape (n, p)
+    x : np.array with shape (n, p)
         Independent variable.
-    y : np.matrix with shape (n, 1)
+    y : np.array with shape (n, 1)
         Dependent variable.
     n_blocks : int
         Number of jackknife blocks
@@ -195,17 +191,17 @@ class LstsqJackknifeSlow(Jackknife):
 
     Attributes
     ----------
-    est : np.matrix with shape (1, p)
+    est : np.array with shape (1, p)
         FWLS estimate.
-    jknife_est : np.matrix with shape (1, p)
+    jknife_est : np.array with shape (1, p)
         Jackknifed estimate.
-    jknife_var : np.matrix with shape (1, p)
+    jknife_var : np.array with shape (1, p)
         Variance of jackknifed estimate.
-    jknife_se : np.matrix with shape (1, p)
+    jknife_se : np.array with shape (1, p)
         Standard error of jackknifed estimate, equal to sqrt(jknife_var).
-    jknife_cov : np.matrix with shape (p, p)
+    jknife_cov : np.array with shape (p, p)
         Covariance matrix of jackknifed estimate.
-    delete_vals : np.matrix with shape (n_blocks, p)
+    delete_vals : np.array with shape (n_blocks, p)
         Jackknife delete values.
 
     Methods
@@ -243,9 +239,9 @@ class LstsqJackknifeSlow(Jackknife):
 
         Parameters
         ----------
-        x : np.matrix with shape (n, p)
+        x : np.array with shape (n, p)
             Independent variable.
-        y : np.matrix with shape (n, 1)
+        y : np.array with shape (n, 1)
             Dependent variable.
         func : function (n, p) , (n, 1) --> (1, p)
             Function of x and y to be jackknived.
@@ -254,7 +250,7 @@ class LstsqJackknifeSlow(Jackknife):
 
         Returns
         -------
-        delete_values : np.matrix with shape (n_blocks, p)
+        delete_values : np.array with shape (n_blocks, p)
             Delete block values (with n_blocks blocks defined by parameter s).
 
         Raises
@@ -276,7 +272,6 @@ class LstsqJackknifeSlow(Jackknife):
 
 
 class LstsqJackknifeFast(Jackknife):
-
     """
     Fast block jackknife for linear regression.
 
@@ -284,26 +279,26 @@ class LstsqJackknifeFast(Jackknife):
 
     Parameters
     ----------
-    x : np.matrix with shape (n, p)
+    x : np.array with shape (n, p)
         Independent variable.
-    y : np.matrix with shape (n, 1)
+    y : np.array with shape (n, 1)
         Dependent variable.
     n_blocks : int
         Number of jackknife blocks
 
     Attributes
     ----------
-    est : np.matrix with shape (1, p)
+    est : np.array with shape (1, p)
         FWLS estimate.
-    jknife_est : np.matrix with shape (1, p)
+    jknife_est : np.array with shape (1, p)
         Jackknifed estimate.
-    jknife_var : np.matrix with shape (1, p)
+    jknife_var : np.array with shape (1, p)
         Variance of jackknifed estimate.
-    jknife_se : np.matrix with shape (1, p)
+    jknife_se : np.array with shape (1, p)
         Standard error of jackknifed estimate, equal to sqrt(jknife_var).
-    jknife_cov : np.matrix with shape (p, p)
+    jknife_cov : np.array with shape (p, p)
         Covariance matrix of jackknifed estimate.
-    delete_vals : np.matrix with shape (n_blocks, p)
+    delete_vals : np.array with shape (n_blocks, p)
         Jackknife delete values.
 
     Methods
@@ -339,9 +334,9 @@ class LstsqJackknifeFast(Jackknife):
 
         Parameters
         ----------
-        x : np.matrix with shape (n, p)
+        x : np.array with shape (n, p)
             Independent variable.
-        y : np.matrix with shape (n, 1)
+        y : np.array with shape (n, 1)
             Dependent variable.
         n_blocks : int
             Number of jackknife blocks
@@ -350,7 +345,7 @@ class LstsqJackknifeFast(Jackknife):
 
         Returns
         -------
-        xty_block_values : np.matrix with shape (n_blocks, p)
+        xty_block_values : np.array with shape (n_blocks, p)
             Block values of X^T Y.
         xtx_block_values : 3d np array with shape (n_blocks, p, p)
             Block values of X^T X.
@@ -382,14 +377,14 @@ class LstsqJackknifeFast(Jackknife):
 
         Parameters
         ----------
-        xty_block_values : np.matrix with shape (n_blocks, p)
+        xty_block_values : np.array with shape (n_blocks, p)
             Block values of X^T Y.
         xtx_block_values : 3D np.array with shape (n_blocks, p, p)
             Block values of X^T X
 
         Returns
         -------
-        est : np.matrix with shape (1, p)
+        est : np.array with shape (1, p)
             Whole data estimate.
 
         Raises
@@ -413,16 +408,16 @@ class LstsqJackknifeFast(Jackknife):
 
         Parameters
         ----------
-        xty_block_values : np.matrix with shape (n_blocks, p)
+        xty_block_values : np.array with shape (n_blocks, p)
             Block values of X^T Y.
         xtx_block_values : 3D np.array with shape (n_blocks, p, p)
             Block values of X^T X
-        est : np.matrix with shape (1, p)
+        est : np.array with shape (1, p)
             Whole data estimate
 
         Returns
         -------
-        delete_values : np.matrix with shape (n_blocks, p)
+        delete_values : np.array with shape (n_blocks, p)
             Delete Values.
 
         Raises
@@ -449,7 +444,6 @@ class LstsqJackknifeFast(Jackknife):
 
 
 class RatioJackknife(Jackknife):
-
     """
     Block jackknife ratio estimate.
 
@@ -459,9 +453,9 @@ class RatioJackknife(Jackknife):
     ----------
     est : float or np.array with shape (1, p)
         Whole data ratio estimate
-    numer_delete_values : np.matrix with shape (n_blocks, p)
+    numer_delete_values : np.array with shape (n_blocks, p)
         Delete values for the numerator.
-    denom_delete_values: np.matrix with shape (n_blocks, p)
+    denom_delete_values: np.array with shape (n_blocks, p)
         Delete values for the denominator.
 
     Methods
@@ -516,11 +510,11 @@ class RatioJackknife(Jackknife):
 
         Parameters
         ----------
-        est : np.matrix with shape (1, p)
+        est : np.array with shape (1, p)
             Whole-data ratio estimate.
-        denom : np.matrix with shape (n_blocks, p)
+        denom : np.array with shape (n_blocks, p)
             Denominator delete values.
-        numer : np.matrix with shape (n_blocks, p)
+        numer : np.array with shape (n_blocks, p)
             Numerator delete values.
 
         Returns
