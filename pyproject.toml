@@ -23,3 +23,4 @@ dev-dependencies = [
 
 [project.scripts]
 ldsc = "ldsc.scripts.ldsc:main"
+munge_sumstats = "ldsc.scripts.munge_sumstats:main"

@@ -897,5 +897,10 @@ def munge_sumstats(args, p=True):
         log.log(f"Total time elapsed: {sec_to_str(round(time.time() - START_TIME, 2))}")
 
 
+def main():
+    args = parser.parse_args()
+    munge_sumstats(args, p=True)
+
+
 if __name__ == "__main__":
-    munge_sumstats(parser.parse_args(), p=True)
+    main()
